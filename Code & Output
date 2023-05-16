@@ -2,7 +2,7 @@ import pandas as pd
 import yfinance as yf
 
 # Choose 5 international indices and 5 equities from yfinance
-tickers = ["^GSPC", "^DJI", "^IXIC", "^FTSE", "^N225", "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"]
+tickers = ["^GSPC", "^DJI"]
 
 # Load the daily data since 2010-01-01
 df = yf.download(tickers, start="2010-01-01", end="2023-05-01")
@@ -12,6 +12,9 @@ df["daily_returns"] = df["Adj Close"].pct_change().iloc[:,0]
 
 # Calculate the cumulative returns
 df["cumulative_returns"] = (df["daily_returns"] + 1).cumprod()
+
+#Calculate the volitality 
+df["volitality"]=df["daily_returns"].std()
 
 # Calculate the maximum drawdowns
 df["max_drawdown"] = df["cumulative_returns"].min() - 1
@@ -24,7 +27,6 @@ df["sortino_ratio"] = df["daily_returns"].mean() / df["daily_returns"].std(ddof=
 
 # Print the results
 print(df)
-
 
 
 
