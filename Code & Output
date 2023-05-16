@@ -2,7 +2,7 @@ import pandas as pd
 import yfinance as yf
 
 # Choose 5 international indices and 5 equities from yfinance
-tickers = ["^GSPC", "^DJI"]
+tickers = ["^GSPC", "^DJI", "^IXIC", "^FTSE", "^N225", "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"]
 
 # Load the daily data since 2010-01-01
 df = yf.download(tickers, start="2010-01-01", end="2023-05-01")
