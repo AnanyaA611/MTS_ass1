@@ -41,6 +41,16 @@ sortino_ratio = (daily_return_avg - risk_free_rate) / downside_risk
 
 # Print the results in tabulated form
 
+# Create DataFrame for index metrics
+index_metrics = pd.DataFrame({
+    'Indices': indices,
+    'Cumulative Returns': cumulative_returns.iloc[-1, :len(indices)].values,
+    'Max Drawdowns': max_drawdowns[:len(indices)].values,
+    'Volatility': volatility[:len(indices)].values,
+    'Sharpe Ratio': sharpe_ratio[:len(indices)].values,
+    'Sortino Ratio': sortino_ratio[:len(indices)].values
+})
+# Create DataFrame for equity metrics
 equity_metrics = pd.DataFrame({
     'Equities': equities,
     'Cumulative Returns': cumulative_returns.iloc[-1, len(indices):].values,
@@ -50,64 +60,32 @@ equity_metrics = pd.DataFrame({
     'Sortino Ratio': sortino_ratio[len(indices):].values
 })
 
-index_metrics = pd.DataFrame({
-    'Indices': indices,
-    'Cumulative Returns': cumulative_returns.iloc[-1, :len(indices)].values,
-    'Max Drawdowns': max_drawdowns[:len(indices)].values,
-    'Volatility': volatility[:len(indices)].values,
-    'Sharpe Ratio': sharpe_ratio[:len(indices)].values,
-    'Sortino Ratio': sortino_ratio[:len(indices)].values
-})
 
-# Concatenate the equity and index metrics
-metrics_df = pd.concat([equity_metrics, index_metrics], ignore_index=True)
+# Print the index metrics table
+print("Index Metrics:")
+print((index_metrics.T).to_string(header=False))
 
-# Pivot the DataFrame to obtain the desired table format
 
-results = metrics_df.pivot_table(index=None, columns='Equities').T
-
-# Print the results in tabulated form
-pd.set_option('display.max_columns', None)
-print(results)
-
-results = metrics_df.pivot_table(index=None, columns='Indices').T
-
-# Print the results in tabulated form
-pd.set_option('display.max_columns', None)
-print(results)
+# Print the equity metrics table
+print("\nEquity Metrics:")
+print((equity_metrics.T).to_string(header=False))
 
 
 ------------------------------------------------------------------------------------------------------
                                       OUTPUT
 --------------------------------------------------------------------------------------------------------
-  Cumulative Returns  Max Drawdowns  Sharpe Ratio  Sortino Ratio  \
-Equities                                                                   
-AAPL                2.221683      -0.370862      0.037077       0.044086   
-AMZN                4.296515      -0.363953      0.044112       0.054811   
-FB                  1.708307      -0.317989      0.028988       0.038367   
-GOOGL               0.430940      -0.366055      0.015320       0.019496   
-MSFT                2.680068      -0.339250      0.039711       0.047827   
+Index Metrics:
+Indices                 ^GSPC      ^IXIC  ^DJI     ^FTSE     ^N225
+Cumulative Returns  25.083426  14.750559   NaN  5.843728  12.00632
+Max Drawdowns       -0.437972  -0.561453   NaN -0.443201 -0.371485
+Volatility           0.017726   0.020564   NaN  0.016918  0.016201
+Sharpe Ratio          0.06202   0.048976   NaN   0.04126   0.05384
+Sortino Ratio        0.085221    0.06881   NaN  0.056704  0.074053
 
-          Volatility  
-Equities              
-AAPL        0.010649  
-AMZN        0.012771  
-FB          0.012726  
-GOOGL       0.010087  
-MSFT        0.011008  
-
-
-
-         Cumulative Returns  Max Drawdowns  Sharpe Ratio  Sortino Ratio  \
-Indices                                                                   
-^FTSE              5.843728      -0.443201      0.041260       0.056704   
-^GSPC             25.083426      -0.437972      0.062020       0.085221   
-^IXIC             14.750559      -0.561453      0.048976       0.068810   
-^N225             12.006320      -0.371485      0.053840       0.074053   
-
-         Volatility  
-Indices              
-^FTSE      0.016918  
-^GSPC      0.017726  
-^IXIC      0.020564  
-^N225      0.016201  
+Equity Metrics:
+Equities                AAPL     GOOGL      MSFT      AMZN        FB
+Cumulative Returns  2.221683   0.43094  2.680068  4.296515  1.708307
+Max Drawdowns      -0.370862 -0.366055  -0.33925 -0.363953 -0.317989
+Volatility          0.010649  0.010087  0.011008  0.012771  0.012726
+Sharpe Ratio        0.037077   0.01532  0.039711  0.044112  0.028988
+Sortino Ratio       0.044086  0.019496  0.047827  0.054811  0.038367
