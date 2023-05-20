@@ -1,110 +1,113 @@
-import pandas as pd
 import yfinance as yf
+import pandas as pd
+import numpy as np
 
-# Choose 5 international indices and 5 equities from yfinance
-tickers = ["^GSPC", "^DJI", "^IXIC", "^FTSE", "^N225", "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"]
+# Define the international indices and equities
+indices = ['^GSPC', '^IXIC', '^DJI', '^FTSE', '^N225']
+equities = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'FB']
 
-# Load the daily data since 2010-01-01
-df = yf.download(tickers, start="2010-01-01", end="2023-05-01")
+# Define the start date
+start_date = '2010-01-01'
+end_date='2023-05-01'
 
-# Calculate the daily returns
-df["daily_returns"] = df["Adj Close"].pct_change().iloc[:,0]
+ #Fetch the data
+data = yf.download(indices + equities, start=start_date, end=end_date)['Adj Close']
 
-# Calculate the cumulative returns
-df["cumulative_returns"] = (df["daily_returns"] + 1).cumprod()
+import pandas as pd 
+# Calculate daily returns
+returns = data.pct_change()
 
-#Calculate the volitality 
-df["volitality"]=df["daily_returns"].std()
+# Calculate cumulative returns
+cumulative_returns = (returns + 1).cumprod() - 1
 
-# Calculate the maximum drawdowns
-df["max_drawdown"] = df["cumulative_returns"].min() - 1
+# Calculate volatility
+volatility = returns.std()
 
-# Calculate the Sharpe Ratio
-df["sharpe_ratio"] = df["daily_returns"].mean() / df["daily_returns"].std()
+# Calculate maximum drawdowns
+rolling_max = data.cummax()
+drawdown = (data - rolling_max) / rolling_max
+max_drawdowns = drawdown.min()
 
-# Calculate the Sortino Ratio
-df["sortino_ratio"] = df["daily_returns"].mean() / df["daily_returns"].std(ddof=1)
+# Calculate Sharpe ratio and Sortino ratio
+risk_free_rate = 0.0  # Assuming no risk-free rate
+daily_risk = returns.std()
+annual_risk = daily_risk * np.sqrt(252)
+daily_return_avg = returns.mean()
+sharpe_ratio = (daily_return_avg - risk_free_rate) / daily_risk
+downside_returns = returns[returns < 0]
+downside_risk = downside_returns.std()
+sortino_ratio = (daily_return_avg - risk_free_rate) / downside_risk
 
-# Print the results
-print(df)
+
+# Print the results in tabulated form
+
+equity_metrics = pd.DataFrame({
+    'Equities': equities,
+    'Cumulative Returns': cumulative_returns.iloc[-1, len(indices):].values,
+    'Max Drawdowns': max_drawdowns[len(indices):].values,
+    'Volatility': volatility[len(indices):].values,
+    'Sharpe Ratio': sharpe_ratio[len(indices):].values,
+    'Sortino Ratio': sortino_ratio[len(indices):].values
+})
+
+index_metrics = pd.DataFrame({
+    'Indices': indices,
+    'Cumulative Returns': cumulative_returns.iloc[-1, :len(indices)].values,
+    'Max Drawdowns': max_drawdowns[:len(indices)].values,
+    'Volatility': volatility[:len(indices)].values,
+    'Sharpe Ratio': sharpe_ratio[:len(indices)].values,
+    'Sortino Ratio': sortino_ratio[:len(indices)].values
+})
+
+# Concatenate the equity and index metrics
+metrics_df = pd.concat([equity_metrics, index_metrics], ignore_index=True)
+
+# Pivot the DataFrame to obtain the desired table format
+
+results = metrics_df.pivot_table(index=None, columns='Equities').T
+
+# Print the results in tabulated form
+pd.set_option('display.max_columns', None)
+print(results)
+
+results = metrics_df.pivot_table(index=None, columns='Indices').T
+
+# Print the results in tabulated form
+pd.set_option('display.max_columns', None)
+print(results)
+
+
+------------------------------------------------------------------------------------------------------
+                                      OUTPUT
+--------------------------------------------------------------------------------------------------------
+  Cumulative Returns  Max Drawdowns  Sharpe Ratio  Sortino Ratio  \
+Equities                                                                   
+AAPL                2.221683      -0.370862      0.037077       0.044086   
+AMZN                4.296515      -0.363953      0.044112       0.054811   
+FB                  1.708307      -0.317989      0.028988       0.038367   
+GOOGL               0.430940      -0.366055      0.015320       0.019496   
+MSFT                2.680068      -0.339250      0.039711       0.047827   
+
+          Volatility  
+Equities              
+AAPL        0.010649  
+AMZN        0.012771  
+FB          0.012726  
+GOOGL       0.010087  
+MSFT        0.011008  
 
 
 
+         Cumulative Returns  Max Drawdowns  Sharpe Ratio  Sortino Ratio  \
+Indices                                                                   
+^FTSE              5.843728      -0.443201      0.041260       0.056704   
+^GSPC             25.083426      -0.437972      0.062020       0.085221   
+^IXIC             14.750559      -0.561453      0.048976       0.068810   
+^N225             12.006320      -0.371485      0.053840       0.074053   
 
-[*********************100%***********************]  10 of 10 completed
-             Adj Close                                                  \
-                  AAPL        AMZN       GOOGL        MSFT        TSLA   
-Date                                                                     
-2010-01-04    6.496294    6.695000   15.684434   23.623909         NaN   
-2010-01-05    6.507525    6.734500   15.615365   23.631531         NaN   
-2010-01-06    6.404015    6.612500   15.221722   23.486511         NaN   
-2010-01-07    6.392177    6.500000   14.867367   23.242254         NaN   
-2010-01-08    6.434672    6.676000   15.065566   23.402546         NaN   
-...                ...         ...         ...         ...         ...   
-2023-04-24  165.101639  106.209999  105.970001  281.769989  162.550003   
-2023-04-25  163.543793  102.570000  103.849998  275.420013  160.669998   
-2023-04-26  163.533798  104.980003  103.709999  295.369995  153.750000   
-2023-04-27  168.177383  109.820000  107.589996  304.829987  160.190002   
-2023-04-28  169.445618  105.449997  107.339996  307.260010  164.309998   
-
-                                                                  \
-                    ^DJI        ^FTSE        ^GSPC         ^IXIC   
-Date                                                               
-2010-01-04  10583.959961  5500.299805  1132.989990   2308.419922   
-2010-01-05  10572.019531  5522.500000  1136.520020   2308.709961   
-2010-01-06  10573.679688  5530.000000  1137.140015   2301.090088   
-2010-01-07  10606.860352  5526.700195  1141.689941   2300.050049   
-2010-01-08  10618.190430  5534.200195  1144.979980   2317.169922   
-...                  ...          ...          ...           ...   
-2023-04-24  33875.398438  7912.200195  4137.040039  12037.200195   
-2023-04-25  33530.828125  7891.100098  4071.629883  11799.160156   
-2023-04-26  33301.871094  7852.600098  4055.989990  11854.349609   
-2023-04-27  33826.160156  7831.600098  4135.350098  12142.240234   
-2023-04-28  34098.160156  7870.600098  4169.479980  12226.580078   
-
-                          ...        Volume                              \
-                   ^N225  ...         ^FTSE         ^GSPC         ^IXIC   
-Date                      ...                                             
-2010-01-04  10654.790039  ...  7.509420e+08  3.991400e+09  1.931380e+09   
-2010-01-05  10681.830078  ...  1.149301e+09  2.491020e+09  2.367860e+09   
-2010-01-06  10731.450195  ...  9.982953e+08  4.972660e+09  2.253340e+09   
-2010-01-07  10681.660156  ...  1.162934e+09  5.270680e+09  2.270050e+09   
-2010-01-08  10798.320312  ...  1.006421e+09  4.389590e+09  2.145390e+09   
-...                  ...  ...           ...           ...           ...   
-2023-04-24  28593.519531  ...  7.248459e+08  3.290940e+09  4.854050e+09   
-2023-04-25  28620.070312  ...  6.579008e+08  3.978640e+09  4.806020e+09   
-2023-04-26  28416.470703  ...  9.027473e+08  3.837030e+09  5.281970e+09   
-2023-04-27  28457.679688  ...  6.697343e+08  3.750550e+09  5.253710e+09   
-2023-04-28  28856.439453  ...  9.452735e+08  4.087800e+09  5.331380e+09   
-
-                        daily_returns cumulative_returns volitality  \
-                  ^N225                                               
-Date                                                                  
-2010-01-04  104400000.0           NaN                NaN   0.017726   
-2010-01-05  166200000.0      0.001729           1.001729   0.017726   
-2010-01-06  181800000.0     -0.015906           0.985795   0.017726   
-2010-01-07  182600000.0     -0.001849           0.983973   0.017726   
-2010-01-08  211800000.0      0.006648           0.990514   0.017726   
-...                 ...           ...                ...        ...   
-2023-04-24   50000000.0      0.001879          25.414744   0.017726   
-2023-04-25   59300000.0     -0.009436          25.174939   0.017726   
-2023-04-26   68700000.0     -0.000061          25.173400   0.017726   
-2023-04-27   73600000.0      0.028395          25.888206   0.017726   
-2023-04-28  104000000.0      0.007541          26.083430   0.017726   
-
-           max_drawdown sharpe_ratio sortino_ratio  
-                                                    
-Date                                                
-2010-01-04    -0.102612      0.06202       0.06202  
-2010-01-05    -0.102612      0.06202       0.06202  
-2010-01-06    -0.102612      0.06202       0.06202  
-2010-01-07    -0.102612      0.06202       0.06202  
-2010-01-08    -0.102612      0.06202       0.06202  
-...                 ...          ...           ...  
-2023-04-24    -0.102612      0.06202       0.06202  
-2023-04-25    -0.102612      0.06202       0.06202  
-2023-04-26    -0.102612      0.06202       0.06202  
-2023-04-27    -0.102612      0.06202       0.06202  
-2023-04-28    -0.102612      0.06202       0.06202  
-
-[3464 rows x 66 columns]
+         Volatility  
+Indices              
+^FTSE      0.016918  
+^GSPC      0.017726  
+^IXIC      0.020564  
+^N225      0.016201  
